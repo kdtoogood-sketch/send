@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#12355b">
+<title>SendDesk</title>
+<style>
+:root{--navy:#12355b;--navy2:#1d4a7a;--green:#1f8f4e;--green2:#eaf7ef;--amber:#d97f00;--amber2:#fff6e5;--red:#c62828;--red2:#fdecec;--bg:#f2f4f7;--card:#fff;--line:#e3e8ee;--mut:#6b7886;--txt:#1d2b3a;--wa:#d9fdd3;--wabg:#efe7dd}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+#login{position:fixed;inset:0;background:linear-gradient(140deg,#0d2742,#12355b 55%,#1f6b47);display:flex;align-items:center;justify-content:center;padding:20px;z-index:900}
+.lbox{background:#fff;border-radius:22px;padding:30px 24px;width:100%;max-width:340px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.lbox h1{font-size:28px;font-weight:900;color:var(--navy)}.lbox h1 span{color:var(--green)}
+.lbox p{font-size:12.5px;color:var(--mut);margin:4px 0 22px}
+#loginErr{display:none;color:var(--red);font-size:13px;margin-top:10px;text-align:center}
+#app{display:none;min-height:100vh;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+.hdr{position:sticky;top:0;z-index:50;background:var(--navy);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;padding-top:calc(12px + env(safe-area-inset-top))}
+.hdr .brand{font-weight:900;font-size:19px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hdr .brand span{color:#7fe0a8}
+.hdr .back{background:rgba(255,255,255,.12);border:0;color:#fff;width:34px;height:34px;border-radius:10px;font-size:20px;display:none}
+.sync{font-size:11.5px;padding:4px 9px;border-radius:12px;background:rgba(255,255,255,.14);white-space:nowrap}
+.sync.err{background:#ffb4a8;color:#5a0b00}.sync.busy{background:#ffe08a;color:#4a3500}
+#view{max-width:640px;margin:0 auto;padding:14px 14px 20px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;border:0;background:none;padding:8px 2px 9px;font-size:11.5px;font-weight:700;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button b{font-size:20px;line-height:1.1}
+.tabs button.on{color:var(--navy)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
+.h2{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:16px 2px 8px}
+.h2:first-child{margin-top:2px}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1;min-width:0}
+.mut{color:var(--mut);font-size:12.5px}
+.big{font-size:26px;font-weight:900}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:11px;padding:11px 14px;font-weight:800;background:var(--navy);color:#fff}
+.btn.g{background:var(--green)}.btn.w{background:#fff;color:var(--navy);border:1.5px solid #cfd8e1}.btn.r{background:#fff;color:var(--red);border:1.5px solid #f0c4c4}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:9px}
+.btn.full{width:100%}
+.btn:disabled{opacity:.45}
+.inp{width:100%;border:1.5px solid #d5dde5;border-radius:10px;padding:10px 12px;background:#fff;outline:none}
+.inp:focus{border-color:var(--navy2)}
+textarea.inp{min-height:180px;resize:vertical;line-height:1.5}
+.lbl{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:10px 0 5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid #cfd8e1;background:#fff;border-radius:18px;padding:6px 11px;font-size:13px;font-weight:600;color:#34495e}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.chip.ong{background:var(--green2);border-color:var(--green);color:#17663a}
+.seg{display:flex;background:#e6ebf0;border-radius:11px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;padding:8px 4px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--mut)}
+.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.li{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #eef1f4}
+.li:last-child{border-bottom:0}
+.nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:7px;background:#eef4fb;color:var(--navy)}
+.tag.a{background:var(--amber2);color:#8a5200}.tag.r{background:var(--red2);color:var(--red)}.tag.g{background:var(--green2);color:#17663a}
+.cb{width:22px;height:22px;border-radius:6px;border:2px solid #b8c3cd;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;color:#fff;font-size:14px;font-weight:900}
+.cb.on{background:var(--green);border-color:var(--green)}
+.bar{height:8px;background:#e6ebf0;border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--green);border-radius:6px}
+.ban{border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:11px;line-height:1.45}
+.ban.a{background:var(--amber2);border:1px solid #f2c97a;color:#6a4100}
+.ban.i{background:#eef4fb;border:1px solid #cfe0f2;color:#173c63}
+.ban.r{background:var(--red2);border:1px solid #f0c4c4;color:#7a1414}
+.wa{background:var(--wabg);border-radius:12px;padding:12px}
+.bub{background:var(--wa);border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.5;margin-left:auto;max-width:92%;word-wrap:break-word;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.bub .lnk{color:#027eb5;text-decoration:underline}
+.sendb{background:var(--green);color:#fff;border:0;border-radius:10px;padding:8px 13px;font-weight:800;font-size:13.5px;white-space:nowrap}
+.sendb.dim{background:#9aa7b3}
+.okt{color:var(--green);font-weight:800;font-size:13px;white-space:nowrap;background:none;border:0}
+.mk{border:1px solid #d5dde5;background:#fff;border-radius:8px;padding:3px 6px;font-size:13px;opacity:.55}
+.mk.on{opacity:1;border-color:var(--navy);background:#eef4fb}
+.toolbar{display:flex;gap:6px;margin:6px 0}
+.toolbar button{border:1px solid #d5dde5;background:#fff;border-radius:8px;padding:5px 10px;font-weight:800;font-size:13px}
+.empty{text-align:center;color:var(--mut);padding:26px 10px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1d2b3a;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:999;max-width:90vw;text-align:center}
+#ov{position:fixed;inset:0;background:rgba(10,20,30,.45);z-index:300;display:none;align-items:flex-end;justify-content:center}
+#ov.on{display:flex}
+#sheet{background:#fff;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom))}
+#sheet h3{font-size:17px;margin-bottom:8px}
+.sel{border:1.5px solid #d5dde5;border-radius:9px;padding:6px 8px;background:#fff;font-size:13px;font-weight:700;color:var(--navy);max-width:130px}
+.gi{border:0;border-bottom:1.5px dashed #9fb0c0;background:none;font-weight:700;width:100%;padding:2px 0;outline:none}
+.stick{position:sticky;bottom:calc(66px + env(safe-area-inset-bottom));z-index:20;padding-top:8px;background:linear-gradient(to bottom,rgba(242,244,247,0),var(--bg) 30%)}
+.kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eef1f4;font-size:14px}.kv:last-child{border:0}
+a{color:var(--navy2)}
+</style>
+</head>
+<body>
+
+<div id="login"><div class="lbox"><h1>Send<span>Desk</span></h1><p>WhatsApp sender · K.D. Constructions</p>
+<form onsubmit="doLogin();return false;" autocomplete="on">
+<input type="email" name="username" autocomplete="username" value="kd@kdcinfra.in" style="display:none" readonly>
+<label class="lbl" for="loginPass">Password (Kanwar)</label>
+<input class="inp" type="password" id="loginPass" name="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
+<button class="btn full g" id="loginBtn" type="submit" style="margin-top:14px">Sign in →</button>
+</form>
+<div id="loginErr"></div></div></div>
+
+<div id="app">
+  <div class="hdr"><button class="back" id="backBtn" onclick="history.back()">‹</button><div class="brand" id="brand">Send<span>Desk</span></div><div class="sync" id="sync">✓ Saved</div></div>
+  <div id="view"></div>
+  <nav class="tabs" id="tabs">
+    <button data-t="home" onclick="go('home')"><b>📤</b>Sends</button>
+    <button data-t="new" onclick="go('new')"><b>✍️</b>New</button>
+    <button data-t="people" onclick="go('people')"><b>👥</b>Contacts</button>
+    <button data-t="more" onclick="go('more')"><b>⚙️</b>More</button>
+  </nav>
+</div>
+<div id="ov" onclick="if(event.target===this)closeSheet()"><div id="sheet"></div></div>
+<div id="toast"></div>
+<input type="file" id="vcfFile" accept=".vcf,text/vcard,text/x-vcard,text/directory" style="display:none" onchange="vcfChosen(this)">
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   SendDesk — Phase 1
+   Personal WhatsApp sending in small batches, one tap per person.
+   Nothing is ever sent automatically: every message is sent by
+   Kanwar pressing send inside WhatsApp.
+   Data: Firestore (REST, no SDK) at senddesk/main/<collection>.
+   Contact import reads ONLY name + phone from the .vcf, on this
+   phone; the file itself is never uploaded or stored.
+   ════════════════════════════════════════════════════════════ */
+const APP_VER='SendDesk v1 · Phase 1';
+const FB_PROJECT='propdesk-f50e0';
+const FB_KEY='AIzaSyBiBmFAJHTxoZAddAON94u7fQ_d-RpX2io';
+const FB_API='https://firestore.googleapis.com/v1/';
+const FB_DOCS=`projects/${FB_PROJECT}/databases/(default)/documents`;
+const ROOT='senddesk/main';
+const LOGIN_EMAIL='kd@kdcinfra.in';
+const COLLS=['contacts','lists','groups','sends','templates','settings'];
+const BATCH=10;
+const BUILTIN_LISTS=[
+  {id:'dealers', name:'Dealers', icon:'🏢', builtin:true, order:1},
+  {id:'clients', name:'Clients', icon:'👤', builtin:true, order:2},
+  {id:'builders',name:'Builders',icon:'🏗️', builtin:true, order:3}
+];
+const DEFAULT_PREFIX={pd:'dealers',broker:'dealers',brokers:'dealers',brkr:'dealers',bkr:'dealers',dealer:'dealers',dealers:'dealers',
+  client:'clients',clients:'clients',owner:'clients',party:'clients',builder:'builders',builders:'builders','~owner':'clients'};
+const GREET_WORDS=['Sat Sri Akal','Namaste','Hello','Good morning'];
+
+/* ---------- small helpers ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const cap=w=>w?w.charAt(0).toUpperCase()+w.slice(1).toLowerCase():'';
+function toast(m,ms=2600){const t=$('toast');t.textContent=m;t.style.opacity='1';clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',ms);}
+function dayKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+const isToday=ts=>!!ts&&dayKey(ts)===dayKey(Date.now());
+function fmtTime(ts){const d=new Date(ts);let h=d.getHours(),m=d.getMinutes();const ap=h>=12?'pm':'am';h=h%12||12;return h+':'+String(m).padStart(2,'0')+' '+ap;}
+function fmtDay(ts){const d=new Date(ts);const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return (isToday(ts)?'Today':d.getDate()+' '+mn[d.getMonth()])+', '+fmtTime(ts);}
+function lsGet(k,def){try{const v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* ---------- Firestore value encoding ---------- */
+function fsEnc(v){
+  if(v===null||v===undefined) return {nullValue:null};
+  if(typeof v==='boolean') return {booleanValue:v};
+  if(typeof v==='number') return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  if(typeof v==='string') return {stringValue:v};
+  if(Array.isArray(v)) return {arrayValue:{values:v.map(fsEnc)}};
+  if(typeof v==='object') return {mapValue:{fields:Object.fromEntries(Object.entries(v).filter(([,x])=>x!==undefined).map(([k,x])=>[k,fsEnc(x)]))}};
+  return {stringValue:String(v)};
+}
+function fsDec(v){
+  if(!v) return null;
+  if('nullValue' in v) return null;
+  if('booleanValue' in v) return v.booleanValue;
+  if('integerValue' in v) return Number(v.integerValue);
+  if('doubleValue' in v) return v.doubleValue;
+  if('stringValue' in v) return v.stringValue;
+  if('timestampValue' in v) return Date.parse(v.timestampValue);
+  if('arrayValue' in v) return (v.arrayValue.values||[]).map(fsDec);
+  if('mapValue' in v) return Object.fromEntries(Object.entries(v.mapValue.fields||{}).map(([k,x])=>[k,fsDec(x)]));
+  return null;
+}
+const docName=(coll,id)=>`${FB_DOCS}/${ROOT}/${coll}/${id}`;
+
+/* ---------- sign-in (same Firebase logins as the other apps) ---------- */
+const AUTH_STORE='senddesk_auth';
+let _auth=lsGet(AUTH_STORE,null), _authRefreshing=null;
+function _authSave(){ if(_auth)lsSet(AUTH_STORE,_auth); else {try{localStorage.removeItem(AUTH_STORE);}catch(e){}} }
+const _rawFetch=window.fetch.bind(window);
+function _authMsg(code){
+  const c=String(code||'');
+  if(/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|INVALID_EMAIL|EMAIL_NOT_FOUND/.test(c))return '❌ Wrong password. Try again.';
+  if(/TOO_MANY_ATTEMPTS/.test(c))return '⏳ Too many tries — wait a few minutes.';
+  if(/USER_DISABLED/.test(c))return '⛔ This login has been switched off.';
+  if(/network|Failed to fetch|TypeError|Load failed/i.test(c))return '📶 No internet — connect and try again.';
+  return '❌ Could not sign in ('+c.slice(0,60)+')';
+}
+async function authSignIn(password){
+  const r=await _rawFetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:LOGIN_EMAIL,password,returnSecureToken:true})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.idToken) throw new Error((j.error&&j.error.message)||('HTTP '+r.status));
+  _auth={email:(j.email||LOGIN_EMAIL).toLowerCase(),idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+(Number(j.expiresIn||3600)-60)*1000};
+  _authSave(); return _auth;
+}
+async function authToken(){
+  if(!_auth||!_auth.refreshToken) return null;
+  if(_auth.idToken&&Date.now()<_auth.exp) return _auth.idToken;
+  if(_authRefreshing) return _authRefreshing;
+  _authRefreshing=(async()=>{
+    try{
+      const r=await _rawFetch('https://securetoken.googleapis.com/v1/token?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(_auth.refreshToken)});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok||!j.id_token){
+        const m=String((j.error&&(j.error.message||j.error))||'');
+        if(/TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN/.test(m)){_auth=null;_authSave();setTimeout(()=>{try{sessionStorage.setItem('sd_msg','🔒 Please sign in again.');}catch(e){}location.reload();},0);}
+        return null;
+      }
+      _auth.idToken=j.id_token;_auth.refreshToken=j.refresh_token||_auth.refreshToken;_auth.exp=Date.now()+(Number(j.expires_in||3600)-60)*1000;_authSave();
+      return _auth.idToken;
+    }catch(e){return _auth&&_auth.idToken||null;}
+    finally{_authRefreshing=null;}
+  })();
+  return _authRefreshing;
+}
+window.fetch=async function(url,opts){
+  if(typeof url==='string'&&url.indexOf('firestore.googleapis.com')>=0){
+    const t=await authToken(); if(!t) throw new TypeError('Not signed in');
+    opts={...(opts||{})}; opts.headers={...(opts.headers||{}),Authorization:'Bearer '+t};
+  }
+  return _rawFetch(url,opts);
+};
+async function doLogin(){
+  const pass=$('loginPass').value, err=$('loginErr'), b=$('loginBtn');
+  if(!pass){err.textContent='Enter your password';err.style.display='block';return;}
+  b.disabled=true;b.textContent='Signing in…';err.style.display='none';
+  try{ await authSignIn(pass); $('loginPass').value=''; await startApp(); }
+  catch(e){ err.textContent=_authMsg(e.message); err.style.display='block'; }
+  finally{ b.disabled=false; b.textContent='Sign in →'; }
+}
+function doLogout(){ if(Q.size&&!confirm('Some changes are still saving. Log out anyway?'))return; _auth=null;_authSave();location.reload(); }
+
+/* ---------- data ---------- */
+const DB={contacts:[],lists:[],groups:[],sends:[],templates:[],settings:[]};
+let BYP=new Map();               // phone -> contact
+function reindex(){ BYP=new Map(DB.contacts.map(c=>[c.phone,c])); }
+async function fsListAll(coll){
+  const out=[]; let tok='';
+  do{
+    const r=await fetch(FB_API+FB_DOCS+'/'+ROOT+'/'+coll+'?pageSize=300'+(tok?'&pageToken='+encodeURIComponent(tok):''));
+    if(!r.ok){ const e=new Error('HTTP '+r.status); e.status=r.status; throw e; }
+    const j=await r.json();
+    (j.documents||[]).forEach(d=>{const o=fsDec({mapValue:{fields:d.fields||{}}})||{}; o.id=d.name.split('/').pop(); out.push(o);});
+    tok=j.nextPageToken||'';
+  }while(tok);
+  return out;
+}
+/* save queue: every change is written in the background, retried until it lands */
+const Q=new Map(); let qBusy=false, qErr='';
+function put(coll,obj){ Q.set(coll+'|'+obj.id,{coll,id:obj.id,data:JSON.parse(JSON.stringify(obj))}); qFlush(); }
+function del(coll,id){ Q.set(coll+'|'+id,{coll,id,data:null}); qFlush(); }
+async function qFlush(){
+  if(qBusy){return;}
+  if(!Q.size){syncUI();return;}
+  qBusy=true; syncUI();
+  try{
+    while(Q.size){
+      const items=[...Q.values()].slice(0,400);
+      const writes=items.map(it=>it.data===null?{delete:docName(it.coll,it.id)}:{update:{name:docName(it.coll,it.id),fields:fsEnc(it.data).mapValue.fields}});
+      const r=await fetch(FB_API+FB_DOCS+':commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({writes})});
+      if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}
+      items.forEach(it=>{const k=it.coll+'|'+it.id; if(Q.get(k)===it)Q.delete(k);});
+      qErr='';
+    }
+  }catch(e){ qErr=String(e.message||e); clearTimeout(qFlush._t); qFlush._t=setTimeout(qFlush,6000); }
+  finally{ qBusy=false; syncUI(); }
+}
+function syncUI(){
+  const s=$('sync'); if(!s)return;
+  if(qErr&&Q.size){s.className='sync err';s.textContent='⚠ Not saved yet · retrying';}
+  else if(Q.size||qBusy){s.className='sync busy';s.textContent='⟳ Saving…';}
+  else {s.className='sync';s.textContent='✓ Saved';}
+}
+window.addEventListener('online',qFlush);
+window.addEventListener('beforeunload',e=>{ if(Q.size){e.preventDefault();e.returnValue='';} });
+function setting(k,def){ const s=DB.settings.find(x=>x.id==='main'); return s&&s[k]!==undefined?s[k]:def; }
+function setSetting(k,v){ let s=DB.settings.find(x=>x.id==='main'); if(!s){s={id:'main'};DB.settings.push(s);} s[k]=v; put('settings',s); }
+
+/* ---------- phone numbers & names ---------- */
+function normPhone(raw){
+  if(!raw) return '';
+  const s=String(raw).trim(); let d=s.replace(/\D/g,'');
+  if(!d) return '';
+  if(s.startsWith('+')){/* already has country code */}
+  else if(d.startsWith('00')) d=d.slice(2);
+  else if(d.length===10) d='91'+d;
+  else if(d.length===11&&d[0]==='0') d='91'+d.slice(1);
+  else if(d.length===12&&d.startsWith('91')){}
+  else if(d.length<10) return '';
+  if(d.length<10||d.length>15) return '';
+  if(d.startsWith('91')&&(d.length!==12||!/[6-9]/.test(d[2]))) return '';   // Indian landline or bad number — no WhatsApp
+  return d;
+}
+function fmtPhone(d){ return (d.startsWith('91')&&d.length===12)?'+91 '+d.slice(2,7)+' '+d.slice(7):'+'+d; }
+const tokNorm=w=>String(w||'').toLowerCase().replace(/[^a-z]/g,'');
+const nameWords=n=>String(n||'').trim().split(/[\s\-_:,]+/).filter(Boolean);
+const firstTok=n=>tokNorm(nameWords(n)[0]);
+const HON=new Set(['mr','mrs','ms','dr','sh','shri','sri','smt','er','ca','adv','sir','ji','bhai','s','the','m','miss']);
+function makeGreet(name){
+  const w=nameWords(name); const pre=Object.keys(DEFAULT_PREFIX).concat(Object.keys(prefixMap()));
+  for(let i=0;i<w.length;i++){
+    const t=tokNorm(w[i]);
+    if(i===0&&pre.includes(t)) continue;
+    if(t.length<2||HON.has(t)||!/^[A-Za-z]/.test(w[i])||t==='owner') continue;
+    return cap(w[i].replace(/[^A-Za-z]/g,''))+' ji';
+  }
+  return '';
+}
+function prefixMap(){ return Object.assign({},DEFAULT_PREFIX,setting('prefixMap',{})||{}); }
+
+/* ---------- message building ---------- */
+function greetCfg(s){ return Object.assign({on:true,word:'Sat Sri Akal',name:true},(s&&s.greet)||{}); }
+function greetLine(g,c){
+  if(!g.on) return '';
+  const word=(g.word||'').trim(); const nm=(g.name&&c&&c.greet)?c.greet:'';
+  const line=[word,nm].filter(Boolean).join(' ');
+  return line?line+' 🙏':'';
+}
+function buildMsg(s,c){       // c = contact, or null for groups / copy
+  const g=greetCfg(s);
+  const gl=greetLine(c?g:Object.assign({},g,{name:false}),c);
+  const body=String(s.text||'').replace(/\{name\}/g,(c&&c.greet)||'').replace(/[ \t]+\n/g,'\n').trim();
+  return gl?(body?gl+'\n\n'+body:gl):body;
+}
+function waFmt(t){
+  let h=esc(t);
+  h=h.replace(/(^|[\s(>])\*([^*\n]+?)\*(?=$|[\s).,!?:;<])/g,'$1<b>$2</b>');
+  h=h.replace(/(^|[\s(>])_([^_\n]+?)_(?=$|[\s).,!?:;<])/g,'$1<i>$2</i>');
+  h=h.replace(/(^|[\s(>])~([^~\n]+?)~(?=$|[\s).,!?:;<])/g,'$1<s>$2</s>');
+  h=h.replace(/(https?:\/\/[^\s<]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:in|com|co|org|net)\/[^\s<]*)/gi,'<span class="lnk">$1</span>');
+  return h.replace(/\n/g,'<br>');
+}
+
+/* ---------- derived numbers ---------- */
+function listById(id){ return DB.lists.find(l=>l.id===id); }
+function listsSorted(){ return DB.lists.slice().sort((a,b)=>(a.order||99)-(b.order||99)||String(a.name).localeCompare(b.name)); }
+function members(listId){ return DB.contacts.filter(c=>(c.lists||[]).includes(listId)); }
+function sentTodayMap(){
+  const m=new Map();
+  DB.sends.forEach(s=>Object.entries(s.sent||{}).forEach(([p,ts])=>{ if(isToday(ts)) m.set(p,(m.get(p)||0)+1); }));
+  return m;
+}
+function recentSends(mins){ const cut=Date.now()-mins*60000; let n=0; DB.sends.forEach(s=>Object.values(s.sent||{}).forEach(ts=>{if(ts>=cut)n++;})); return n; }
+function audience(listIds){
+  const set=new Set(listIds); const phones=[]; let stopped=0, multi=0;
+  const order=new Map(listIds.map((l,i)=>[l,i]));
+  const rows=[];
+  for(const c of DB.contacts){
+    const hit=(c.lists||[]).filter(l=>set.has(l)); if(!hit.length) continue;
+    if(hit.length>1) multi++;
+    if(c.stop){stopped++;continue;}
+    rows.push([Math.min(...hit.map(h=>order.get(h))),c]);
+  }
+  rows.sort((a,b)=>a[0]-b[0]||String(a[1].name).localeCompare(String(b[1].name)));
+  rows.forEach(r=>phones.push(r[1].phone));
+  return {phones,stopped,multi};
+}
+
+/* ---------- navigation ---------- */
+let ROUTE='home', ARG='', VIEW={};          // VIEW = per-screen UI state
+function go(r,arg){ location.hash='#'+r+(arg?'/'+arg:''); }
+function readHash(){ const h=(location.hash||'#home').slice(1).split('/'); ROUTE=h[0]||'home'; ARG=decodeURIComponent(h.slice(1).join('/')||''); }
+window.addEventListener('hashchange',()=>{ readHash(); closeSheet(); render(); window.scrollTo(0,0); });
+function render(){
+  const main=['home','new','people','more'];
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===ROUTE||(ROUTE==='send'&&b.dataset.t==='home')||((ROUTE==='list')&&b.dataset.t==='people')||(ROUTE==='import'&&b.dataset.t==='more')));
+  $('backBtn').style.display=main.includes(ROUTE)?'none':'block';
+  const v=$('view');
+  try{
+    if(ROUTE==='home') v.innerHTML=vHome();
+    else if(ROUTE==='new') {v.innerHTML=vNew(); afterNew();}
+    else if(ROUTE==='people') v.innerHTML=vPeople();
+    else if(ROUTE==='list') v.innerHTML=vList(ARG);
+    else if(ROUTE==='send') v.innerHTML=vSend(ARG);
+    else if(ROUTE==='more') v.innerHTML=vMore();
+    else if(ROUTE==='import') v.innerHTML=vImport();
+    else { ROUTE='home'; v.innerHTML=vHome(); }
+  }catch(e){ console.error(e); v.innerHTML='<div class="ban r">Something went wrong showing this screen: '+esc(e.message)+'</div>'; }
+}
+function rerender(keepScroll=true){ const y=window.scrollY; render(); if(keepScroll)window.scrollTo(0,y); }
+
+/* ---------- sheet (pop-up) ---------- */
+function openSheet(html){ $('sheet').innerHTML=html; $('ov').classList.add('on'); }
+function closeSheet(){ $('ov').classList.remove('on'); $('sheet').innerHTML=''; }
+
+/* ════════════ HOME: sends ════════════ */
+function sendStats(s){
+  const rec=(s.recipients||[]); const sent=rec.filter(p=>s.sent&&s.sent[p]).length;
+  const gs=(s.groups||[]); const gd=gs.filter(g=>s.groupsSent&&s.groupsSent[g]).length;
+  return {rec:rec.length,sent,gs:gs.length,gd};
+}
+function vHome(){
+  if(!DB.contacts.length&&!DB.groups.length) return `<div class="card" style="text-align:center;padding:24px 16px">
+    <div style="font-size:40px">👋</div><div style="font-weight:800;font-size:18px;margin:6px 0">Welcome to SendDesk</div>
+    <div class="mut" style="margin-bottom:14px">First, bring in your Dealers, Clients and Builders from your phone contacts.</div>
+    <button class="btn g full" onclick="go('import')">⬆️ Import contacts</button>
+    <button class="btn w full" style="margin-top:8px" onclick="go('people')">📱 Or make a list by picking from phone</button></div>`;
+  const tm=sentTodayMap(); let todayPeople=0; tm.forEach(v=>todayPeople+=v);
+  let todayGroups=0; DB.sends.forEach(s=>Object.values(s.groupsSent||{}).forEach(ts=>{if(isToday(ts))todayGroups++;}));
+  const last30=recentSends(30);
+  const act=DB.sends.filter(s=>!s.done).sort((a,b)=>b.createdAt-a.createdAt);
+  const fin=DB.sends.filter(s=>s.done).sort((a,b)=>b.createdAt-a.createdAt).slice(0,15);
+  let h=`<div class="card"><div class="row"><div class="sp"><div class="mut">Sent today</div><div class="big">${todayPeople} <span style="font-size:14px;font-weight:700;color:var(--mut)">people · ${todayGroups} groups</span></div></div>
+    <button class="btn g" onclick="go('new')">＋ New send</button></div>
+    ${last30>=BATCH?`<div class="ban a" style="margin:10px 0 0">⏸ ${last30} messages in the last 30 min. Take a break before the next batch — it keeps your number safe.</div>`:''}</div>`;
+  h+=`<div class="h2">In progress (${act.length})</div>`;
+  h+=act.length?act.map(sendCard).join(''):`<div class="empty">Nothing in progress. Tap <b>＋ New send</b> to write a message.</div>`;
+  if(fin.length) h+=`<div class="h2">Finished</div>`+fin.map(sendCard).join('');
+  return h;
+}
+function sendCard(s){
+  const st=sendStats(s); const pct=st.rec?Math.round(st.sent*100/st.rec):(st.gs?Math.round(st.gd*100/st.gs):0);
+  const ln=(s.lists||[]).map(l=>listById(l)).filter(Boolean).map(l=>l.icon+' '+esc(l.name)).join(' · ');
+  return `<div class="card" onclick="go('send','${s.id}')" style="cursor:pointer${s.done?';opacity:.7':''}">
+    <div class="row"><div class="sp"><div class="nm">${esc(s.title||'Message')}</div><div class="sub">${ln||'Groups only'} · ${fmtDay(s.createdAt)}</div></div>${s.done?'<span class="tag g">Done</span>':''}</div>
+    <div class="bar" style="margin:9px 0 6px"><i style="width:${pct}%"></i></div>
+    <div class="mut">${st.rec?`👤 ${st.sent}/${st.rec} people`:''}${st.rec&&st.gs?' · ':''}${st.gs?`👥 ${st.gd}/${st.gs} groups`:''}</div></div>`;
+}
+
+/* ════════════ NEW SEND (compose) ════════════ */
+function draft(){ if(!VIEW.draft){ VIEW.draft=lsGet('sd_draft',null)||{text:'',lists:[],groups:[],title:''}; VIEW.draft.greet=Object.assign({on:true,word:'Sat Sri Akal',name:true},lsGet('sd_greet',{}),VIEW.draft.greet||{}); } return VIEW.draft; }
+function saveDraft(){ lsSet('sd_draft',VIEW.draft); lsSet('sd_greet',VIEW.draft.greet); }
+function greetEditor(g,prefix){
+  const custom=!GREET_WORDS.includes(g.word);
+  return `<div class="card" style="padding:11px">
+   <div class="row" style="cursor:pointer" onclick="${prefix}Greet('on',${!g.on})"><div class="cb ${g.on?'on':''}">${g.on?'✓':''}</div><div class="sp" style="font-weight:800">Greeting line</div><span class="mut">${g.on?esc(greetLine(g,{greet:'Harinder ji'})):'off'}</span></div>
+   ${g.on?`<div class="chips" style="margin:10px 0 8px">${GREET_WORDS.map(w=>`<button class="chip ${g.word===w?'on':''}" onclick="${prefix}Greet('word','${w}')">${w}</button>`).join('')}<button class="chip ${custom?'on':''}" onclick="${prefix}Greet('custom')">✏️ ${custom&&g.word?esc(g.word):'Own'}</button></div>
+   <div class="row" style="cursor:pointer" onclick="${prefix}Greet('name',${!g.name})"><div class="cb ${g.name?'on':''}">${g.name?'✓':''}</div><div class="sp">Add name <span class="mut">(Harinder ji)</span></div></div>`:''}
+  </div>`;
+}
+function newGreet(k,v){
+  const d=draft();
+  if(k==='custom'){ const w=prompt('Your greeting (e.g. "Good evening", "Happy Diwali")',GREET_WORDS.includes(d.greet.word)?'':d.greet.word); if(w==null)return; d.greet.word=w.trim(); }
+  else d.greet[k]=v;
+  saveDraft(); rerender();
+}
+function vNew(){
+  const d=draft();
+  const tpl=DB.templates.slice().sort((a,b)=>String(a.name).localeCompare(b.name));
+  const ls=listsSorted();
+  const au=audience(d.lists);
+  const gsel=d.groups.filter(g=>DB.groups.some(x=>x.id===g));
+  return `
+  <div class="h2">Greeting</div>${greetEditor(d.greet,'new')}
+  <div class="h2">Message</div>
+  ${tpl.length?`<div class="chips" style="margin-bottom:8px"><span class="mut" style="align-self:center">Templates:</span>${tpl.map(t=>`<button class="chip" onclick="useTpl('${t.id}')">${esc(t.name)}</button>`).join('')}</div>`:''}
+  <div class="toolbar"><button onclick="wrapSel('*')">B</button><button onclick="wrapSel('_')"><i>I</i></button><button onclick="wrapSel('~')"><s>S</s></button><span class="sp"></span><button onclick="saveTplAsk()">💾 Save as template</button></div>
+  <textarea class="inp" id="cmpText" placeholder="Type or paste your message…&#10;&#10;*text* = bold, _text_ = italic" oninput="cmpInput()">${esc(d.text)}</textarea>
+  <div class="mut" style="margin:5px 2px 0">Tip: type <b>{name}</b> anywhere to put the person's name inside the message too.</div>
+  <div class="h2">Preview</div><div class="wa"><div class="bub" id="cmpPrev"></div></div>
+  <div class="h2">To whom</div>
+  <div class="card">
+   ${ls.length?`<div class="chips">${ls.map(l=>{const n=members(l.id).filter(c=>!c.stop).length;return `<button class="chip ${d.lists.includes(l.id)?'ong':''}" onclick="togDraft('lists','${l.id}')">${d.lists.includes(l.id)?'✓ ':''}${l.icon} ${esc(l.name)} · ${n}</button>`;}).join('')}</div>`:'<div class="mut">No lists yet.</div>'}
+   <div class="mut" style="margin-top:9px">${d.lists.length?`<b style="color:var(--txt)">${au.phones.length} people</b>${au.multi?` · ${au.multi} are in 2+ lists, they get it once`:''}${au.stopped?` · ${au.stopped} stopped (skipped)`:''}`:'Tick one or more lists.'}</div>
+  </div>
+  <div class="card">
+   <div class="row"><div class="sp" style="font-weight:800">👥 WhatsApp groups</div>${DB.groups.length?`<button class="btn w sm" onclick="allGroups()">${gsel.length===DB.groups.length?'None':'All'}</button>`:''}</div>
+   ${DB.groups.length?`<div class="chips" style="margin-top:8px">${DB.groups.slice().sort((a,b)=>String(a.name).localeCompare(b.name)).map(g=>`<button class="chip ${d.groups.includes(g.id)?'ong':''}" onclick="togDraft('groups','${g.id}')">${d.groups.includes(g.id)?'✓ ':''}${esc(g.name)}</button>`).join('')}</div>`:`<div class="mut" style="margin-top:6px">No groups added yet — add them in Contacts → Groups.</div>`}
+  </div>
+  <label class="lbl">Name for this send (optional — only you see it)</label>
+  <input class="inp" id="cmpTitle" value="${esc(d.title)}" placeholder="e.g. C-107 plot, Diwali wish" oninput="draft().title=this.value;saveDraft()">
+  <div class="stick"><button class="btn g full" id="cmpGo" onclick="createSend()">Create send → ${au.phones.length?au.phones.length+' people':''}${au.phones.length&&gsel.length?' + ':''}${gsel.length?gsel.length+' groups':''}</button></div>`;
+}
+function afterNew(){ cmpPreview(); }
+function cmpInput(){ draft().text=$('cmpText').value; saveDraft(); cmpPreview(); }
+function cmpPreview(){
+  const d=draft(); const p=$('cmpPrev'); if(!p)return;
+  const m=buildMsg({text:d.text,greet:d.greet},{greet:'Harinder ji'});
+  p.innerHTML=m?waFmt(m):'<span class="mut">Your message will show here</span>';
+}
+function wrapSel(ch){
+  const ta=$('cmpText'); const a=ta.selectionStart,b=ta.selectionEnd; const v=ta.value;
+  if(a===b){ ta.setRangeText(ch+ch,a,b,'end'); ta.selectionStart=ta.selectionEnd=a+1; }
+  else ta.setRangeText(ch+v.slice(a,b).trim()+ch,a,b,'end');
+  ta.focus(); cmpInput();
+}
+function togDraft(k,id){ const d=draft(); const i=d[k].indexOf(id); if(i>=0)d[k].splice(i,1); else d[k].push(id); saveDraft(); rerender(); }
+function allGroups(){ const d=draft(); d.groups=d.groups.length===DB.groups.length?[]:DB.groups.map(g=>g.id); saveDraft(); rerender(); }
+function useTpl(id){
+  const t=DB.templates.find(x=>x.id===id); if(!t)return; const d=draft();
+  if(d.text.trim()&&d.text!==t.text&&!confirm('Replace the current message with template "'+t.name+'"?'))return;
+  d.text=t.text; if(t.greet)d.greet=Object.assign({},t.greet); saveDraft(); rerender();
+}
+function saveTplAsk(){
+  const d=draft(); if(!d.text.trim()){toast('Write a message first');return;}
+  const n=prompt('Template name (e.g. "Rental format", "Diwali wish")'); if(!n||!n.trim())return;
+  const ex=DB.templates.find(t=>t.name.toLowerCase()===n.trim().toLowerCase());
+  if(ex&&!confirm('Replace the existing template "'+ex.name+'"?'))return;
+  const t=ex||{id:uid()}; t.name=n.trim(); t.text=d.text; t.greet=Object.assign({},d.greet);
+  if(!ex)DB.templates.push(t); put('templates',t); toast('💾 Saved template "'+t.name+'"'); rerender();
+}
+function createSend(){
+  const d=draft(); d.text=($('cmpText')||{}).value??d.text;
+  const g=d.greet; const hasBody=d.text.trim().length>0; const hasGreet=g.on&&(g.word||'').trim();
+  if(!hasBody&&!hasGreet){toast('Write a message first');return;}
+  const au=audience(d.lists); const groups=d.groups.filter(x=>DB.groups.some(y=>y.id===x));
+  if(!au.phones.length&&!groups.length){toast('Tick at least one list or group');return;}
+  const firstLine=(d.text.split('\n').map(x=>x.replace(/[*_~]/g,'').trim()).find(x=>x)||'Message').slice(0,40);
+  const s={id:uid(),createdAt:Date.now(),title:(d.title||'').trim()||firstLine,text:d.text,greet:Object.assign({},g),lists:d.lists.slice(),recipients:au.phones,groups,sent:{},marks:{},groupsSent:{},done:false};
+  DB.sends.push(s); put('sends',s);
+  VIEW.draft={text:'',lists:[],groups:[],title:'',greet:Object.assign({},g)}; saveDraft();
+  go('send',s.id);
+}
+
+/* ════════════ SEND SCREEN ════════════ */
+function vSend(id){
+  const s=DB.sends.find(x=>x.id===id); if(!s) return `<div class="empty">This send was deleted.</div>`;
+  const st=sendStats(s); const tm=sentTodayMap(); const last30=recentSends(30);
+  const rec=s.recipients||[]; const nB=Math.max(1,Math.ceil(rec.length/BATCH));
+  let cur=0; for(let i=0;i<nB;i++){ if(rec.slice(i*BATCH,i*BATCH+BATCH).some(p=>!(s.sent||{})[p]&&BYP.has(p)&&!BYP.get(p).stop)){cur=i;break;} cur=i; }
+  const showAll=VIEW.showAll===id;
+  const rows=showAll?rec:rec.slice(cur*BATCH,cur*BATCH+BATCH);
+  const left=rec.filter(p=>!(s.sent||{})[p]&&BYP.has(p)&&!BYP.get(p).stop).length;
+  let h=`<div class="card"><div class="row"><div class="sp"><div class="nm" style="font-size:17px">${esc(s.title)}</div><div class="sub">${fmtDay(s.createdAt)}</div></div>${s.done?'<span class="tag g">Done</span>':''}</div>
+   <div class="bar" style="margin:10px 0 6px"><i style="width:${st.rec?Math.round(st.sent*100/st.rec):0}%"></i></div>
+   <div class="mut">${st.rec?`👤 ${st.sent} of ${st.rec} people sent`:''}${st.rec&&st.gs?' · ':''}${st.gs?`👥 ${st.gd} of ${st.gs} groups`:''}</div>
+   <details style="margin-top:10px"><summary class="mut" style="cursor:pointer;font-weight:700">Show message</summary><div class="wa" style="margin-top:8px"><div class="bub">${waFmt(buildMsg(s,{greet:'Harinder ji'}))}</div></div></details></div>`;
+  if(last30>=BATCH&&left) h+=`<div class="ban a">⏸ You've sent <b>${last30}</b> messages in the last 30 minutes. Best to take a break — next batch in 2–3 hours keeps your number safe.</div>`;
+  if(rec.length){
+    h+=`<div class="h2">${showAll?`All ${rec.length} people`:left?`Batch ${cur+1} of ${nB} · ${BATCH} per batch`:'All people sent ✓'}</div><div class="card" style="padding:4px 10px">`;
+    h+=rows.map(p=>personRow(s,p,tm)).join('')||'<div class="empty">No one here.</div>';
+    h+=`</div><button class="btn w full" onclick="VIEW.showAll=VIEW.showAll==='${id}'?'':'${id}';rerender()">${showAll?'Show only current batch':'Show all '+rec.length+' people'}</button>`;
+  }
+  if((s.groups||[]).length){
+    h+=`<div class="h2">WhatsApp groups</div><div class="card">
+      <button class="btn g full" onclick="shareGroups('${id}')">📤 Share to groups</button>
+      <div class="mut" style="margin:7px 2px 10px">Opens WhatsApp's “Send to” screen — tick up to 5 groups and send. Then tick below which ones you sent to.</div>
+      ${s.groups.map(g=>{const gr=DB.groups.find(x=>x.id===g); if(!gr)return ''; const ts=(s.groupsSent||{})[g];
+        return `<div class="li"><div class="cb ${ts?'on':''}" onclick="togGroupSent('${id}','${g}')" style="cursor:pointer">${ts?'✓':''}</div><div class="sp" onclick="togGroupSent('${id}','${g}')" style="cursor:pointer"><div class="nm">${esc(gr.name)}</div><div class="sub">${ts?'Sent '+fmtDay(ts):gr.lastSent?'Last post '+fmtDay(gr.lastSent):'Not sent'}</div></div>${gr.link?`<button class="btn w sm" onclick="openGroup('${id}','${g}')">Open</button>`:''}</div>`;}).join('')}
+    </div>`;
+  }
+  h+=`<div class="h2">Options</div><div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button class="btn w sm" onclick="editSend('${id}')">✏️ Edit message</button>
+    <button class="btn w sm" onclick="copyMsg('${id}')">📋 Copy message</button>
+    <button class="btn w sm" onclick="toggleDone('${id}')">${s.done?'↩️ Reopen':'✅ Mark finished'}</button>
+    <button class="btn r sm" onclick="deleteSend('${id}')">🗑 Delete</button></div>`;
+  return h;
+}
+function personRow(s,p,tm){
+  const c=BYP.get(p);
+  if(!c) return `<div class="li"><div class="sp"><div class="nm" style="color:var(--mut)">${fmtPhone(p)}</div><div class="sub">Removed from contacts</div></div></div>`;
+  const ts=(s.sent||{})[p]; const mk=(s.marks||{})[p]||'';
+  if(ts) return `<div class="li"><div class="sp"><div class="nm">${esc(c.greet||c.name)}</div><div class="sub">${esc(c.name)}</div>
+      <div class="row" style="gap:5px;margin-top:5px"><button class="mk ${mk==='replied'?'on':''}" onclick="markP('${s.id}','${p}','replied')">💬 Replied</button><button class="mk ${mk==='interested'?'on':''}" onclick="markP('${s.id}','${p}','interested')">⭐ Interested</button><button class="mk ${c.stop?'on':''}" onclick="stopP('${p}')">⛔ Stop</button></div></div>
+      <button class="okt" onclick="unsend('${s.id}','${p}')">✓ ${fmtTime(ts)}</button></div>`;
+  if(c.stop) return `<div class="li"><div class="sp"><div class="nm" style="color:var(--mut)">${esc(c.greet||c.name)}</div><div class="sub">${esc(c.name)}</div></div><span class="tag r">⛔ Stopped</span></div>`;
+  const today=tm.get(p)||0;
+  return `<div class="li"><div class="sp"><div class="nm">${esc(c.greet||c.name)}</div><div class="sub">${esc(c.name)} · ${fmtPhone(p)}</div>${today>=2?`<span class="tag a" style="margin-top:4px">Already got ${today} today</span>`:''}</div>
+    <button class="sendb ${today>=2?'dim':''}" onclick="sendTo('${s.id}','${p}')">💬 Send</button></div>`;
+}
+function sendTo(sid,p){
+  const s=DB.sends.find(x=>x.id===sid), c=BYP.get(p); if(!s||!c)return;
+  const today=sentTodayMap().get(p)||0;
+  if(today>=2&&!confirm((c.greet||c.name)+' already got '+today+' messages from you today. Send anyway?'))return;
+  const msg=buildMsg(s,c);
+  const w=window.open('https://wa.me/'+p+'?text='+encodeURIComponent(msg),'_blank');
+  if(!w){toast('❌ Allow pop-ups for this site in browser settings');return;}
+  s.sent=s.sent||{}; s.sent[p]=Date.now(); put('sends',s);
+  setTimeout(()=>rerender(),300);
+}
+function unsend(sid,p){ const s=DB.sends.find(x=>x.id===sid); const c=BYP.get(p); if(!s)return; if(!confirm('Mark '+((c&&(c.greet||c.name))||'this person')+' as NOT sent?'))return; delete s.sent[p]; if(s.marks)delete s.marks[p]; put('sends',s); rerender(); }
+function markP(sid,p,m){ const s=DB.sends.find(x=>x.id===sid); if(!s)return; s.marks=s.marks||{}; if(s.marks[p]===m)delete s.marks[p]; else s.marks[p]=m; put('sends',s); rerender(); }
+function stopP(p){
+  const c=BYP.get(p); if(!c)return;
+  if(!c.stop&&!confirm('Stop sending to '+(c.greet||c.name)+'? They will be skipped in every future send.'))return;
+  c.stop=!c.stop; c.stopAt=c.stop?Date.now():null; put('contacts',c); toast(c.stop?'⛔ '+(c.greet||c.name)+' will be skipped from now on':'✓ '+(c.greet||c.name)+' can get messages again'); rerender();
+}
+async function shareGroups(sid){
+  const s=DB.sends.find(x=>x.id===sid); if(!s)return; const msg=buildMsg(s,null);
+  if(navigator.share){ try{ await navigator.share({text:msg}); toast('Now tick the groups you sent to'); }catch(e){ if(e&&e.name!=='AbortError'){ await copyText(msg); toast('📋 Copied — paste it in the group'); } } }
+  else { await copyText(msg); toast('📋 Message copied — open the group in WhatsApp and paste',3500); }
+}
+async function openGroup(sid,gid){
+  const s=DB.sends.find(x=>x.id===sid), g=DB.groups.find(x=>x.id===gid); if(!s||!g||!g.link)return;
+  await copyText(buildMsg(s,null)); toast('📋 Message copied — long-press in the group and Paste',3500);
+  setTimeout(()=>window.open(g.link,'_blank'),400);
+}
+function togGroupSent(sid,gid){
+  const s=DB.sends.find(x=>x.id===sid), g=DB.groups.find(x=>x.id===gid); if(!s)return;
+  s.groupsSent=s.groupsSent||{};
+  if(s.groupsSent[gid]) delete s.groupsSent[gid]; else { s.groupsSent[gid]=Date.now(); if(g){g.lastSent=Date.now();put('groups',g);} }
+  put('sends',s); rerender();
+}
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); return true; }catch(e){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed';ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e2){} ta.remove(); return true; } }
+async function copyMsg(sid){ const s=DB.sends.find(x=>x.id===sid); if(!s)return; await copyText(buildMsg(s,null)); toast('📋 Copied (without name)'); }
+function toggleDone(sid){ const s=DB.sends.find(x=>x.id===sid); if(!s)return; s.done=!s.done; put('sends',s); if(s.done)go('home'); else rerender(); }
+function deleteSend(sid){ const s=DB.sends.find(x=>x.id===sid); if(!s)return; if(!confirm('Delete "'+s.title+'"? Its sent ticks will be lost.'))return; DB.sends=DB.sends.filter(x=>x.id!==sid); del('sends',sid); go('home'); }
+function editSend(sid){
+  const s=DB.sends.find(x=>x.id===sid); if(!s)return; VIEW.edit={sid,greet:greetCfg(s)};
+  openSheet(`<h3>✏️ Edit message</h3><div class="mut" style="margin-bottom:8px">People already sent keep the old message — the change applies to the rest.</div>
+    <div id="edGreet">${greetEditor(VIEW.edit.greet,'ed')}</div>
+    <textarea class="inp" id="edText" style="min-height:200px">${esc(s.text)}</textarea>
+    <label class="lbl">Name for this send</label><input class="inp" id="edTitle" value="${esc(s.title)}">
+    <div class="row" style="margin-top:12px"><button class="btn w sp" onclick="closeSheet()">Cancel</button><button class="btn g sp" onclick="saveEdit()">Save</button></div>`);
+}
+function edGreet(k,v){
+  const g=VIEW.edit.greet;
+  if(k==='custom'){ const w=prompt('Your greeting',GREET_WORDS.includes(g.word)?'':g.word); if(w==null)return; g.word=w.trim(); } else g[k]=v;
+  $('edGreet').innerHTML=greetEditor(g,'ed');
+}
+function saveEdit(){
+  const s=DB.sends.find(x=>x.id===VIEW.edit.sid); if(!s)return closeSheet();
+  s.text=$('edText').value; s.title=$('edTitle').value.trim()||s.title; s.greet=Object.assign({},VIEW.edit.greet);
+  put('sends',s); closeSheet(); toast('✓ Message updated'); rerender();
+}
+
+/* ════════════ CONTACTS / LISTS / GROUPS ════════════ */
+function vPeople(){
+  const seg=VIEW.pseg||'lists'; const q=(VIEW.pq||'').trim();
+  let h=`<input class="inp" id="pq" placeholder="🔍 Search all contacts — name or number" value="${esc(VIEW.pq||'')}" oninput="VIEW.pq=this.value;clearTimeout(VIEW._pt);VIEW._pt=setTimeout(()=>{rerender();const e=$('pq');if(!e)return;e.focus();e.setSelectionRange(e.value.length,e.value.length);},250)" style="margin-bottom:12px">`;
+  if(q) return h+searchResults(q);
+  const stopped=DB.contacts.filter(c=>c.stop);
+  h+=`<div class="seg"><button class="${seg==='lists'?'on':''}" onclick="VIEW.pseg='lists';rerender()">📋 Lists</button><button class="${seg==='groups'?'on':''}" onclick="VIEW.pseg='groups';rerender()">👥 Groups ${DB.groups.length}</button><button class="${seg==='stop'?'on':''}" onclick="VIEW.pseg='stop';rerender()">⛔ Stopped ${stopped.length}</button></div>`;
+  if(seg==='lists'){
+    h+=listsSorted().map(l=>{const m=members(l.id);const st=m.filter(c=>c.stop).length;return `<div class="card row" style="cursor:pointer" onclick="go('list','${l.id}')"><div style="font-size:26px">${l.icon}</div><div class="sp"><div class="nm">${esc(l.name)}</div><div class="sub">${l.builtin?'From phone prefix':'Your own list'}${st?' · '+st+' stopped':''}</div></div><div class="big" style="font-size:22px">${m.length-st}</div><div class="mut">›</div></div>`;}).join('');
+    h+=`<button class="btn w full" onclick="newList()">＋ New list (Friends, Family, Cricket…)</button>
+      <div class="mut" style="margin:12px 4px">Total ${DB.contacts.length} contacts saved. To bring in more from your phone: <a href="#import">⬆️ Import contacts</a></div>`;
+  }else if(seg==='groups'){
+    const gs=DB.groups.slice().sort((a,b)=>String(a.name).localeCompare(b.name));
+    h+=`<div class="ban i">Type the names of the WhatsApp groups you post in. When sending, you share to them from WhatsApp's “Send to” screen (5 at a time) and tick them here.</div>`;
+    h+=gs.length?`<div class="card" style="padding:4px 12px">${gs.map(g=>`<div class="li" style="cursor:pointer" onclick="editGroup('${g.id}')"><div style="font-size:22px">👥</div><div class="sp"><div class="nm">${esc(g.name)}</div><div class="sub">${g.lastSent?'Last post '+fmtDay(g.lastSent):'No posts yet'}${g.link?' · has link':''}${g.note?' · '+esc(g.note):''}</div></div><div class="mut">›</div></div>`).join('')}</div>`:'<div class="empty">No groups yet.</div>';
+    h+=`<button class="btn g full" onclick="editGroup('')">＋ Add group</button>`;
+  }else{
+    h+=stopped.length?`<div class="card" style="padding:4px 12px">${stopped.map(c=>`<div class="li"><div class="sp"><div class="nm">${esc(c.greet||c.name)}</div><div class="sub">${esc(c.name)} · ${fmtPhone(c.phone)}</div></div><button class="btn w sm" onclick="stopP('${c.phone}')">Allow again</button></div>`).join('')}</div>`:'<div class="empty">Nobody stopped. Anyone you mark ⛔ Stop is skipped in every send.</div>';
+  }
+  return h;
+}
+function contactRow(c,showLists){
+  const ls=(c.lists||[]).map(l=>listById(l)).filter(Boolean);
+  return `<div class="li" style="cursor:pointer" onclick="editContact('${c.phone}')"><div class="sp"><div class="nm">${esc(c.greet||c.name)}${c.stop?' <span class="tag r">⛔</span>':''}</div><div class="sub">${esc(c.name)} · ${fmtPhone(c.phone)}${showLists&&ls.length?' · '+ls.map(l=>l.icon+' '+esc(l.name)).join(', '):''}</div></div><div class="mut">›</div></div>`;
+}
+function matchQ(c,q){ const ql=q.toLowerCase(), qd=q.replace(/\D/g,''); return String(c.name).toLowerCase().includes(ql)||String(c.greet||'').toLowerCase().includes(ql)||(qd.length>=3&&c.phone.includes(qd)); }
+function searchResults(q){
+  const r=DB.contacts.filter(c=>matchQ(c,q)); const show=r.slice(0,100);
+  return `<div class="mut" style="margin:0 2px 8px">${r.length} found${r.length>100?' — showing first 100':''}</div>`+(show.length?`<div class="card" style="padding:4px 12px">${show.map(c=>contactRow(c,true)).join('')}</div>`:'<div class="empty">No saved contact matches. To add someone new, open a list and use 📱 Pick from phone.</div>');
+}
+function vList(id){
+  const l=listById(id); if(!l) return '<div class="empty">List not found.</div>';
+  const q=(VIEW.lq&&VIEW.lq.id===id?VIEW.lq.q:'').trim();
+  let m=members(id).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const total=m.length; if(q)m=m.filter(c=>matchQ(c,q));
+  const lim=VIEW.llim&&VIEW.llim.id===id?VIEW.llim.n:150;
+  const canPick='contacts' in navigator&&'ContactsManager' in window;
+  return `<div class="card"><div class="row"><div style="font-size:30px">${l.icon}</div><div class="sp"><div class="nm" style="font-size:18px">${esc(l.name)}</div><div class="sub">${total} people${l.builtin?' · names starting '+builtinPrefixes(id):''}</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+     <button class="btn g sm" onclick="pickFromPhone('${id}')">📱 Pick from phone</button>
+     <button class="btn w sm" onclick="addManual('${id}')">➕ Add number</button>
+     ${l.builtin?'':`<button class="btn w sm" onclick="renameList('${id}')">✏️ Rename</button><button class="btn r sm" onclick="deleteList('${id}')">🗑 Delete list</button>`}
+    </div>${canPick?'':'<div class="mut" style="margin-top:8px">📱 Pick from phone works in Chrome on your Android phone (not on iPad).</div>'}</div>
+    <input class="inp" placeholder="🔍 Search in ${esc(l.name)}" value="${esc(q)}" oninput="VIEW.lq={id:'${id}',q:this.value};clearTimeout(VIEW._lt);VIEW._lt=setTimeout(()=>{rerender();const e=$('lq');if(!e)return;e.focus();e.setSelectionRange(e.value.length,e.value.length);},250)" id="lq" style="margin-bottom:10px">
+    ${m.length?`<div class="card" style="padding:4px 12px">${m.slice(0,lim).map(c=>contactRow(c,false)).join('')}</div>${m.length>lim?`<button class="btn w full" onclick="VIEW.llim={id:'${id}',n:${lim+300}};rerender()">Show more (${m.length-lim} left)</button>`:''}`:'<div class="empty">'+(q?'No match.':'Nobody in this list yet.')+'</div>'}`;
+}
+function builtinPrefixes(listId){ const pm=prefixMap(); const t=Object.keys(pm).filter(k=>pm[k]===listId&&!k.startsWith('~')).map(k=>k.length<=2?k.toUpperCase():cap(k)); return t.slice(0,5).join(' / ')+(listId==='clients'&&pm['~owner']==='clients'?' / Owner':''); }
+function newList(){
+  const n=prompt('Name of the new list (e.g. Friends, Family, Cricket team)'); if(!n||!n.trim())return;
+  const icon=/friend/i.test(n)?'🤝':/family/i.test(n)?'👪':/cricket/i.test(n)?'🏏':/tenant/i.test(n)?'🏠':'⭐';
+  const l={id:uid(),name:n.trim(),icon,order:10+DB.lists.length}; DB.lists.push(l); put('lists',l); go('list',l.id);
+}
+function renameList(id){ const l=listById(id); if(!l)return; const n=prompt('New name',l.name); if(!n||!n.trim())return; l.name=n.trim(); put('lists',l); rerender(); }
+function deleteList(id){
+  const l=listById(id); if(!l||l.builtin)return; const m=members(id);
+  if(!confirm('Delete list "'+l.name+'"? The '+m.length+' people stay in your other lists.'))return;
+  m.forEach(c=>{ c.lists=(c.lists||[]).filter(x=>x!==id); if(c.lists.length)put('contacts',c); else {DB.contacts=DB.contacts.filter(x=>x!==c); del('contacts',c.phone);} });
+  DB.lists=DB.lists.filter(x=>x.id!==id); del('lists',id); reindex(); go('people');
+}
+function addToList(name,rawPhone,listId,src){
+  const p=normPhone(rawPhone); if(!p) return 'bad';
+  let c=BYP.get(p);
+  if(c){ if((c.lists||[]).includes(listId)) return 'had'; c.lists=(c.lists||[]).concat(listId); put('contacts',c); return 'added'; }
+  c={id:p,phone:p,name:String(name||'').trim()||fmtPhone(p),greet:makeGreet(name),lists:[listId],stop:false,addedAt:Date.now(),src};
+  DB.contacts.push(c); BYP.set(p,c); put('contacts',c); return 'new';
+}
+async function pickFromPhone(listId){
+  if(!('contacts' in navigator&&'ContactsManager' in window)){ alert('Pick from phone works only in Chrome on your Android phone.\n\nOn this device use “➕ Add number”, or import a .vcf file from More → Import.'); return; }
+  let res; try{ res=await navigator.contacts.select(['name','tel'],{multiple:true}); }catch(e){ toast('Could not open contacts: '+(e.message||e)); return; }
+  if(!res||!res.length)return;
+  const cnt={new:0,added:0,had:0,bad:0};
+  res.forEach(r=>{ const name=(r.name&&r.name[0])||''; const tels=r.tel||[]; let p=''; for(const t of tels){ if(normPhone(t)){p=t;break;} } cnt[p?addToList(name,p,listId,'pick'):'bad']++; });
+  reindex(); const l=listById(listId);
+  toast(`✓ ${cnt.new+cnt.added} added to ${l?l.name:'list'}${cnt.had?' · '+cnt.had+' already there':''}${cnt.bad?' · '+cnt.bad+' had no mobile number':''}`,3800); rerender();
+}
+function addManual(listId){
+  openSheet(`<h3>➕ Add a number</h3>
+   <label class="lbl">Name</label><input class="inp" id="amName" placeholder="e.g. PD Rakesh Kumar" oninput="$('amGreet').value=makeGreet(this.value)">
+   <label class="lbl">Mobile number</label><input class="inp" id="amPhone" inputmode="tel" placeholder="98100 00000">
+   <label class="lbl">Name used in greeting</label><input class="inp" id="amGreet" placeholder="Rakesh ji">
+   <div class="row" style="margin-top:14px"><button class="btn w sp" onclick="closeSheet()">Cancel</button><button class="btn g sp" onclick="saveManual('${listId}')">Add</button></div>`);
+  setTimeout(()=>{const e=$('amName');if(e)e.focus();},50);
+}
+function saveManual(listId){
+  const name=$('amName').value.trim(), ph=$('amPhone').value, gr=$('amGreet').value.trim();
+  if(!normPhone(ph)){toast('❌ Enter a valid mobile number');return;}
+  const r=addToList(name,ph,listId,'manual'); const c=BYP.get(normPhone(ph));
+  if(c&&r==='new'){ c.greet=gr; put('contacts',c); }
+  closeSheet(); toast(r==='had'?'Already in this list':'✓ Added'); rerender();
+}
+function editContact(p){
+  const c=BYP.get(p); if(!c)return; VIEW.ec={p,lists:(c.lists||[]).slice()};
+  const ls=listsSorted();
+  openSheet(`<h3>${esc(c.greet||c.name)}</h3><div class="mut">${fmtPhone(c.phone)}</div>
+   <label class="lbl">Name (as in phone)</label><input class="inp" id="ecName" value="${esc(c.name)}">
+   <label class="lbl">Name used in greeting</label><input class="inp" id="ecGreet" value="${esc(c.greet||'')}" placeholder="e.g. Harinder ji, Bhaji, Sir">
+   <div class="mut" style="margin-top:4px">Preview: <b id="ecPrev"></b></div>
+   <label class="lbl">Lists</label><div class="chips" id="ecLists">${ls.map(l=>`<button class="chip ${VIEW.ec.lists.includes(l.id)?'ong':''}" onclick="ecTog('${l.id}',this)">${l.icon} ${esc(l.name)}</button>`).join('')}</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+    <button class="btn w sm" onclick="window.open('https://wa.me/${c.phone}','_blank')">💬 Open chat</button>
+    <button class="btn ${c.stop?'w':'r'} sm" onclick="closeSheet();stopP('${c.phone}')">${c.stop?'✓ Allow again':'⛔ Stop sending'}</button>
+    <button class="btn r sm" onclick="deleteContact('${c.phone}')">🗑 Remove</button>
+    <button class="btn g sm" onclick="saveContact()">Save</button></div>`);
+  const upd=()=>{$('ecPrev').textContent=greetLine({on:true,word:'Sat Sri Akal',name:true},{greet:$('ecGreet').value.trim()});};
+  $('ecGreet').oninput=upd; upd();
+}
+function ecTog(id,el){ const a=VIEW.ec.lists; const i=a.indexOf(id); if(i>=0)a.splice(i,1); else a.push(id); el.classList.toggle('ong',a.includes(id)); }
+function saveContact(){
+  const c=BYP.get(VIEW.ec.p); if(!c)return closeSheet();
+  if(!VIEW.ec.lists.length){ if(!confirm('Not in any list — remove this contact from SendDesk?'))return; return deleteContact(c.phone,true); }
+  c.name=$('ecName').value.trim()||c.name; c.greet=$('ecGreet').value.trim(); c.lists=VIEW.ec.lists.slice(); put('contacts',c); closeSheet(); toast('✓ Saved'); rerender();
+}
+function deleteContact(p,noAsk){
+  const c=BYP.get(p); if(!c)return;
+  if(!noAsk&&!confirm('Remove '+(c.greet||c.name)+' from SendDesk? (Your phone contacts are not touched.)'))return;
+  DB.contacts=DB.contacts.filter(x=>x.phone!==p); reindex(); del('contacts',p); closeSheet(); toast('Removed'); rerender();
+}
+function editGroup(id){
+  const g=id?DB.groups.find(x=>x.id===id):{id:'',name:'',link:'',note:''}; if(!g)return;
+  openSheet(`<h3>${id?'✏️ Edit group':'＋ Add group'}</h3>
+   <label class="lbl">Group name (as in WhatsApp)</label><input class="inp" id="grName" value="${esc(g.name)}" placeholder="e.g. SL-1 Property Dealers">
+   <label class="lbl">Note (optional)</label><input class="inp" id="grNote" value="${esc(g.note||'')}" placeholder="e.g. 1 post a day, no rentals">
+   <label class="lbl">Invite link (optional)</label><input class="inp" id="grLink" value="${esc(g.link||'')}" placeholder="https://chat.whatsapp.com/…">
+   <div class="mut" style="margin-top:4px">With a link, the “Open” button copies your message and opens the group so you can paste.</div>
+   <div class="row" style="margin-top:14px">${id?`<button class="btn r" onclick="deleteGroup('${id}')">🗑</button>`:''}<button class="btn w sp" onclick="closeSheet()">Cancel</button><button class="btn g sp" onclick="saveGroup('${id}')">Save</button></div>`);
+  setTimeout(()=>{ const e=$('grName'); if(!id&&e)e.focus(); },50);
+}
+function saveGroup(id){
+  const name=$('grName').value.trim(); if(!name){toast('Enter the group name');return;}
+  const link=$('grLink').value.trim(); if(link&&!/^https:\/\/chat\.whatsapp\.com\//i.test(link)){toast('Invite link should start with https://chat.whatsapp.com/');return;}
+  let g=id?DB.groups.find(x=>x.id===id):null; if(!g){g={id:uid(),createdAt:Date.now()};DB.groups.push(g);}
+  g.name=name; g.link=link; g.note=$('grNote').value.trim(); put('groups',g); closeSheet(); toast('✓ Group saved'); rerender();
+}
+function deleteGroup(id){ const g=DB.groups.find(x=>x.id===id); if(!g||!confirm('Remove group "'+g.name+'" from SendDesk?'))return; DB.groups=DB.groups.filter(x=>x.id!==id); del('groups',id); closeSheet(); rerender(); }
+
+/* ════════════ MORE ════════════ */
+function vMore(){
+  const ls=listsSorted();
+  return `<div class="card"><div class="nm" style="font-size:16px">⬆️ Import contacts from phone</div>
+    <div class="mut" style="margin:6px 0 10px">Brings PD / Broker / Dealer, Client / Owner / Party and Builder contacts into your lists. You review every name before anything is saved.</div>
+    <button class="btn g full" onclick="go('import')">Start import</button></div>
+   <div class="h2">Your contacts</div><div class="card">${ls.map(l=>`<div class="kv"><span>${l.icon} ${esc(l.name)}</span><b>${members(l.id).length}</b></div>`).join('')}<div class="kv"><span>👥 Groups</span><b>${DB.groups.length}</b></div><div class="kv"><span>⛔ Stopped</span><b>${DB.contacts.filter(c=>c.stop).length}</b></div></div>
+   <div class="h2">Templates (${DB.templates.length})</div><div class="card" style="padding:4px 12px">${DB.templates.length?DB.templates.map(t=>`<div class="li"><div class="sp"><div class="nm">${esc(t.name)}</div><div class="sub">${esc(String(t.text).split('\n').find(x=>x.trim())||'')}</div></div><button class="btn w sm" onclick="useTplGo('${t.id}')">Use</button><button class="btn r sm" onclick="delTpl('${t.id}')">🗑</button></div>`).join(''):'<div class="empty" style="padding:14px">Save a message as a template from the ✍️ New screen.</div>'}</div>
+   <div class="h2">Safety rules</div><div class="card mut" style="line-height:1.6">
+    • Every message is sent by <b>you</b> pressing send in WhatsApp — nothing goes automatically.<br>
+    • Batches of ${BATCH}; a warning after ${BATCH} messages in 30 minutes.<br>
+    • A warning before sending a 3rd message to the same person in one day.<br>
+    • ⛔ Stopped people are skipped in every send.<br>
+    • For "everyone" wishes (New Year, Diwali), also post on WhatsApp Status.</div>
+   <div class="h2">Account</div><div class="card"><div class="kv"><span>Signed in</span><b>${esc((_auth&&_auth.email)||'')}</b></div><div class="kv"><span>Version</span><span>${APP_VER}</span></div>
+    <button class="btn r full" style="margin-top:10px" onclick="doLogout()">Log out</button></div>`;
+}
+function useTplGo(id){ VIEW.draft=null; draft(); useTpl(id); go('new'); }
+function delTpl(id){ const t=DB.templates.find(x=>x.id===id); if(!t||!confirm('Delete template "'+t.name+'"?'))return; DB.templates=DB.templates.filter(x=>x.id!==id); del('templates',id); rerender(); }
+
+/* ════════════ IMPORT (.vcf) ════════════
+   Reads only FN / N (name) and TEL (number). Every other field —
+   notes, emails, addresses, birthdays, company — is never read.
+   The file stays on this phone and is dropped when you leave. */
+let IMP=null;
+function decodeQP(s,charset){
+  const bytes=[]; for(let i=0;i<s.length;i++){ const ch=s[i];
+    if(ch==='='&&/^[0-9A-Fa-f]{2}$/.test(s.substr(i+1,2))){bytes.push(parseInt(s.substr(i+1,2),16));i+=2;}
+    else { const cc=s.charCodeAt(i); if(cc<128)bytes.push(cc); else new TextEncoder().encode(ch).forEach(b=>bytes.push(b)); } }
+  try{ return new TextDecoder((charset||'utf-8').toLowerCase()).decode(new Uint8Array(bytes)); }catch(e){ return new TextDecoder('utf-8').decode(new Uint8Array(bytes)); }
+}
+function vcUnesc(s){ return s.replace(/\\n/gi,' ').replace(/\\([,;\\:])/g,'$1').trim(); }
+function parseVcf(txt){
+  const raw=txt.replace(/\r\n?/g,'\n').split('\n');
+  const lines=[];
+  for(let i=0;i<raw.length;i++){
+    let l=raw[i];
+    if(/^[ \t]/.test(l)&&lines.length){ lines[lines.length-1]+=l.slice(1); continue; }
+    // vCard 2.1 quoted-printable soft line breaks
+    if(/ENCODING=QUOTED-PRINTABLE/i.test(l.split(':')[0]||'')) while(/=$/.test(l)&&i+1<raw.length){ l=l.slice(0,-1)+raw[++i]; }
+    lines.push(l);
+  }
+  const out=[]; let cur=null;
+  for(const l of lines){
+    const up=l.toUpperCase();
+    if(up.startsWith('BEGIN:VCARD')){cur={fn:'',n:'',tels:[]};continue;}
+    if(up.startsWith('END:VCARD')){ if(cur)out.push(cur); cur=null; continue; }
+    if(!cur) continue;
+    const ci=l.indexOf(':'); if(ci<0) continue;
+    const head=l.slice(0,ci), val=l.slice(ci+1);
+    const parts=head.split(';'); const prop=parts[0].replace(/^[^.]*\./,'').toUpperCase();
+    if(prop!=='FN'&&prop!=='N'&&prop!=='TEL') continue;        // nothing else is ever read
+    const params=parts.slice(1).join(';').toUpperCase();
+    let v=val;
+    if(/QUOTED-PRINTABLE/.test(params)){ const m=params.match(/CHARSET=([A-Z0-9-]+)/); v=decodeQP(v,m&&m[1]); }
+    if(prop==='FN') cur.fn=vcUnesc(v);
+    else if(prop==='N'){ const p=v.split(';').map(vcUnesc); cur.n=[p[3],p[1],p[2],p[0],p[4]].filter(Boolean).join(' '); }
+    else cur.tels.push({v:v.trim(),cell:/CELL|MOBILE/.test(params)});
+  }
+  const seen=new Map();
+  for(const c of out){
+    const name=(c.fn||c.n||'').replace(/\s+/g,' ').trim();
+    const pick=(c.tels.filter(t=>t.cell).concat(c.tels)).map(t=>normPhone(t.v)).find(Boolean);
+    if(!pick) continue;
+    if(!seen.has(pick)) seen.set(pick,{name:name||fmtPhone(pick),phone:pick});
+  }
+  return [...seen.values()];
+}
+function vcfChosen(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f)return;
+  if(f.size>60*1024*1024){toast('File too big');return;}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let all; try{ all=parseVcf(String(rd.result||'')); }catch(e){ toast('Could not read this file: '+e.message); return; }
+    if(!all.length){ alert('No contacts with a mobile number were found in this file.\nMake sure it is a .vcf export from your Contacts app.'); return; }
+    const pm=Object.assign({},prefixMap());
+    all.forEach(c=>{ const w=nameWords(c.name); c.tok=tokNorm(w[0]); c.raw0=w[0]||''; c.owner=/\bowner\b/i.test(c.name); });
+    IMP={all,map:pm,step:1,sel:new Set(),over:{},greet:{},tab:'new',q:'',lim:150,fileName:f.name};
+    go('import'); rerender();
+  };
+  rd.onerror=()=>toast('Could not read the file');
+  rd.readAsText(f);
+}
+function impList(c){
+  if(IMP.over[c.phone]!==undefined) return IMP.over[c.phone];
+  const t=IMP.map[c.tok]; if(t) return t;
+  if(c.owner&&IMP.map['~owner']) return IMP.map['~owner'];
+  return '';
+}
+function listSelect(val,onch,withSkip=true){
+  return `<select class="sel" onchange="${onch}">${withSkip?`<option value="" ${!val?'selected':''}>— Skip —</option>`:''}${listsSorted().map(l=>`<option value="${l.id}" ${val===l.id?'selected':''}>${l.icon} ${esc(l.name)}</option>`).join('')}</select>`;
+}
+function vImport(){
+  if(!IMP) return `<div class="card"><div class="nm" style="font-size:17px">⬆️ Import contacts</div>
+    <div class="h2">Step 1 · Export from your phone</div>
+    <div style="line-height:1.7;font-size:14px">On your Samsung: <b>Contacts</b> app → <b>☰ menu</b> → <b>Manage contacts</b> → <b>Import or export contacts</b> → <b>Export</b> → choose <b>Phone / Internal storage</b> → Export.<br>It saves a file ending in <b>.vcf</b> (usually in “My Files”).</div>
+    <div class="h2">Step 2 · Choose that file here</div>
+    <button class="btn g full" onclick="$('vcfFile').click()">📂 Choose .vcf file</button>
+    <div class="ban i" style="margin:12px 0 0">🔒 <b>Your privacy:</b> the file is read on this phone only — it is not uploaded. Only <b>name and mobile number</b> are read; notes, bank details, emails and addresses are ignored. Nothing is saved until you review the names and tap Save.</div></div>`;
+  return IMP.step===1?vImpStep1():vImpStep2();
+}
+function vImpStep1(){
+  const counts=new Map(), spell=new Map();
+  IMP.all.forEach(c=>{ if(!c.tok)return; counts.set(c.tok,(counts.get(c.tok)||0)+1); if(!spell.has(c.tok))spell.set(c.tok,c.raw0); });
+  const ownerOnly=IMP.all.filter(c=>c.owner&&!IMP.map[c.tok]).length;
+  const known=[...counts.keys()].filter(t=>t in IMP.map).sort((a,b)=>counts.get(b)-counts.get(a));
+  // words that also appear as the 2nd word of names are first names (Neha, Amit…), not prefixes — leave them out
+  const second=new Map(); IMP.all.forEach(c=>{ const t=tokNorm(nameWords(c.name)[1]); if(t)second.set(t,(second.get(t)||0)+1); });
+  const other=[...counts.keys()].filter(t=>!(t in IMP.map)&&counts.get(t)>=5&&t.length<=10&&(second.get(t)||0)<2).sort((a,b)=>counts.get(b)-counts.get(a)).slice(0,15);
+  const assigned=IMP.all.filter(c=>impList(c)).length;
+  const row=t=>`<div class="li"><div class="sp"><div class="nm">${esc(spell.get(t))}</div><div class="sub">${counts.get(t)} contacts</div></div>${listSelect(IMP.map[t]||'',`IMP.map['${t}']=this.value;rerender()`)}</div>`;
+  return `<div class="card"><div class="mut">${esc(IMP.fileName)}</div><div class="big">${IMP.all.length.toLocaleString('en-IN')} <span style="font-size:14px;color:var(--mut);font-weight:700">contacts with a mobile number</span></div></div>
+   <div class="h2">Prefixes found → which list</div><div class="card" style="padding:4px 12px">
+    ${known.length?known.map(row).join(''):'<div class="empty" style="padding:12px">None of PD / Broker / Client / Owner / Party / Builder found.</div>'}
+    ${ownerOnly?`<div class="li"><div class="sp"><div class="nm">“Owner” anywhere in name</div><div class="sub">${ownerOnly} contacts (e.g. “Vinay … B142 Owner”)</div></div>${listSelect(IMP.map['~owner']||'',`IMP.map['~owner']=this.value;rerender()`)}</div>`:''}
+   </div>
+   ${other.length?`<div class="h2">Other first words used often</div><div class="mut" style="margin:-4px 2px 8px">If any of these is a short form you use (e.g. “Prop”, “Agent”), pick a list. Leave the rest as Skip.</div><div class="card" style="padding:4px 12px">${other.map(row).join('')}</div>`:''}
+   <div class="card row"><div class="sp"><div class="nm">${(IMP.all.length-assigned).toLocaleString('en-IN')} without a matching prefix</div><div class="sub">Not saved. You can search and add a few by hand on the next screen.</div></div></div>
+   <div class="stick"><div class="row"><button class="btn w" onclick="cancelImport()">Cancel</button><button class="btn g sp" onclick="impNext()">Next: review ${assigned.toLocaleString('en-IN')} names →</button></div></div>`;
+}
+function impNext(){
+  IMP.step=2; IMP.sel=new Set();
+  IMP.all.forEach(c=>{ if(impList(c)&&!BYP.has(c.phone)) IMP.sel.add(c.phone); });
+  setSetting('prefixMap',Object.fromEntries(Object.entries(IMP.map).filter(([k,v])=>DEFAULT_PREFIX[k]!==v)));
+  rerender(false);
+}
+function impGreet(c){ return IMP.greet[c.phone]!==undefined?IMP.greet[c.phone]:makeGreet(c.name); }
+function vImpStep2(){
+  const cand=IMP.all.filter(c=>impList(c));
+  const fresh=cand.filter(c=>!BYP.has(c.phone)), have=cand.filter(c=>BYP.has(c.phone));
+  const tab=IMP.tab; const q=IMP.q.trim();
+  const tabs=[['new','New',fresh.length]].concat(listsSorted().map(l=>[l.id,l.icon+' '+l.name,fresh.filter(c=>impList(c)===l.id).length]).filter(t=>t[2])).concat(have.length?[['have','Already saved',have.length]]:[]);
+  let rows=tab==='have'?have:tab==='new'?fresh:fresh.filter(c=>impList(c)===tab);
+  let extra=[];
+  if(q){ rows=rows.filter(c=>matchQ(c,q)); if(tab!=='have') extra=IMP.all.filter(c=>!impList(c)&&!BYP.has(c.phone)&&matchQ(c,q)).slice(0,40); }
+  const selN=[...IMP.sel].length;
+  const shown=rows.slice(0,IMP.lim);
+  return `<div class="ban i">Untick anyone you don't want. Tap a greeting name to change it. Nothing is saved until you tap <b>Save</b>.</div>
+   <div class="chips" style="margin-bottom:10px">${tabs.map(t=>`<button class="chip ${tab===t[0]?'on':''}" onclick="IMP.tab='${t[0]}';IMP.lim=150;rerender(false)">${esc(t[1])} ${t[2]}</button>`).join('')}</div>
+   <input class="inp" id="impQ" placeholder="🔍 Search — also finds contacts without a prefix" value="${esc(IMP.q)}" oninput="IMP.q=this.value;clearTimeout(IMP._t);IMP._t=setTimeout(()=>{rerender();const e=$('impQ');if(!e)return;e.focus();e.setSelectionRange(e.value.length,e.value.length);},300)" style="margin-bottom:8px">
+   ${tab!=='have'&&rows.length?`<div class="row" style="margin-bottom:8px"><span class="mut sp">${rows.length} shown</span><button class="btn w sm" onclick="impAll(true)">Tick all</button><button class="btn w sm" onclick="impAll(false)">Untick all</button></div>`:''}
+   ${tab==='have'?`<div class="mut" style="margin:0 2px 8px">These are already in SendDesk and will stay as they are.</div>`:''}
+   <div class="card" style="padding:2px 10px">${shown.map(c=>impRow(c,tab==='have')).join('')||'<div class="empty">Nothing here.</div>'}</div>
+   ${rows.length>IMP.lim?`<button class="btn w full" onclick="IMP.lim+=300;rerender()">Show more (${rows.length-IMP.lim} left)</button>`:''}
+   ${extra.length?`<div class="h2">Without prefix — add by hand</div><div class="card" style="padding:2px 10px">${extra.map(c=>`<div class="li"><div class="sp"><div class="nm">${esc(c.name)}</div><div class="sub">${fmtPhone(c.phone)}</div></div>${listSelect('',`impOver('${c.phone}',this.value)`)}</div>`).join('')}</div>`:''}
+   <div class="stick"><div class="row"><button class="btn w" onclick="IMP.step=1;rerender(false)">‹ Back</button><button class="btn g sp" onclick="impSave()" ${selN?'':'disabled'}>Save ${selN.toLocaleString('en-IN')} to lists</button></div></div>`;
+}
+function impRow(c,ro){
+  const on=IMP.sel.has(c.phone); const L=impList(c);
+  if(ro){ const ex=BYP.get(c.phone); return `<div class="li"><div class="sp"><div class="sub">${esc(c.name)}</div><div class="nm">${esc(ex.greet||ex.name)}</div></div><span class="tag">${(ex.lists||[]).map(l=>(listById(l)||{}).icon||'').join(' ')}</span></div>`; }
+  return `<div class="li"><div class="cb ${on?'on':''}" style="cursor:pointer" onclick="impTog('${c.phone}')">${on?'✓':''}</div>
+   <div class="sp"><div class="sub">${esc(c.name)} · ${fmtPhone(c.phone)}</div><input class="gi" value="${esc(impGreet(c))}" placeholder="(no name)" onchange="IMP.greet['${c.phone}']=this.value.trim()"></div>
+   ${listSelect(L,`impOver('${c.phone}',this.value)`)}</div>`;
+}
+function impTog(p){ if(IMP.sel.has(p))IMP.sel.delete(p); else IMP.sel.add(p); rerender(); }
+function impOver(p,v){ IMP.over[p]=v; if(v)IMP.sel.add(p); else IMP.sel.delete(p); rerender(); }
+function impAll(on){
+  const q=IMP.q.trim(); const tab=IMP.tab;
+  IMP.all.forEach(c=>{ const L=impList(c); if(!L||BYP.has(c.phone))return; if(tab!=='new'&&L!==tab)return; if(q&&!matchQ(c,q))return; if(on)IMP.sel.add(c.phone); else IMP.sel.delete(c.phone); });
+  rerender();
+}
+function impSave(){
+  const pick=IMP.all.filter(c=>IMP.sel.has(c.phone)&&impList(c)&&!BYP.has(c.phone));
+  if(!pick.length){toast('Nothing ticked');return;}
+  if(!confirm('Save '+pick.length+' contacts to your lists?'))return;
+  const now=Date.now(); const by={};
+  pick.forEach(c=>{ const L=impList(c); const o={id:c.phone,phone:c.phone,name:c.name,greet:impGreet(c),lists:[L],stop:false,addedAt:now,src:'vcf'}; DB.contacts.push(o); put('contacts',o); by[L]=(by[L]||0)+1; });
+  reindex(); IMP=null;   // drop everything read from the file
+  toast('✓ Saved '+pick.length+' — '+Object.entries(by).map(([l,n])=>((listById(l)||{}).name||l)+' '+n).join(', '),4000);
+  VIEW.pseg='lists'; go('people');
+}
+function cancelImport(){ if(!confirm('Cancel the import? Nothing will be saved.'))return; IMP=null; go('more'); }
+
+/* ════════════ start ════════════ */
+async function startApp(){
+  $('login').style.display='none'; $('app').style.display='block';
+  $('view').innerHTML='<div class="empty">Loading…</div>';
+  try{
+    const res=await Promise.all(COLLS.map(c=>fsListAll(c)));
+    COLLS.forEach((c,i)=>DB[c]=res[i]);
+  }catch(e){
+    if(e.status===403){ $('view').innerHTML=`<div class="ban r"><b>Database permission needed.</b><br>SendDesk's data area isn't open for your login yet. Add this rule in Firebase → Firestore → Rules (inside <code>match /databases/{database}/documents { … }</code>), then Publish and reload:</div>
+      <pre style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;white-space:pre-wrap">match /senddesk/{doc=**} {
+  allow read, write: if request.auth != null
+    && request.auth.token.email == 'kd@kdcinfra.in';
+}</pre><button class="btn full" onclick="location.reload()">Reload</button>`; return; }
+    $('view').innerHTML=`<div class="ban r">Could not load (${esc(e.message)}). Check internet.</div><button class="btn full" onclick="location.reload()">Try again</button>`; return;
+  }
+  BUILTIN_LISTS.forEach(b=>{ if(!DB.lists.some(l=>l.id===b.id)){ const l=Object.assign({},b); DB.lists.push(l); put('lists',l); } });
+  DB.contacts.forEach(c=>{ c.phone=c.phone||c.id; c.lists=c.lists||[]; });
+  DB.sends.forEach(s=>{ s.sent=s.sent||{}; s.marks=s.marks||{}; s.groupsSent=s.groupsSent||{}; s.recipients=s.recipients||[]; s.groups=s.groups||[]; });
+  reindex(); readHash(); render(); syncUI();
+}
+(function boot(){
+  let m=''; try{ m=sessionStorage.getItem('sd_msg')||''; sessionStorage.removeItem('sd_msg'); }catch(e){}
+  if(m){ const e=$('loginErr'); e.textContent=m; e.style.display='block'; }
+  if(_auth&&_auth.refreshToken&&(_auth.email||'')===LOGIN_EMAIL) startApp();
+  else { _auth=null; _authSave(); setTimeout(()=>$('loginPass').focus(),100); }
+})();
+</script>
+</body>
+</html>

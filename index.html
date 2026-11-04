@@ -122,7 +122,7 @@ a{color:var(--navy2)}
    Contact import reads ONLY name + phone from the .vcf, on this
    phone; the file itself is never uploaded or stored.
    ════════════════════════════════════════════════════════════ */
-const APP_VER='SendDesk v1 · Phase 1';
+const APP_VER='SendDesk v1.1 · Phase 1';
 const FB_PROJECT='propdesk-f50e0';
 const FB_KEY='AIzaSyBiBmFAJHTxoZAddAON94u7fQ_d-RpX2io';
 const FB_API='https://firestore.googleapis.com/v1/';
@@ -232,7 +232,7 @@ async function doLogin(){
   catch(e){ err.textContent=_authMsg(e.message); err.style.display='block'; }
   finally{ b.disabled=false; b.textContent='Sign in →'; }
 }
-function doLogout(){ if(Q.size&&!confirm('Some changes are still saving. Log out anyway?'))return; _auth=null;_authSave();location.reload(); }
+function doLogout(){ if(Q.size&&!confirm('Some changes are still saving. Log out anyway?'))return; _auth=null;_authSave();cacheClear();location.reload(); }
 
 /* ---------- data ---------- */
 const DB={contacts:[],lists:[],groups:[],sends:[],templates:[],settings:[]};
@@ -251,8 +251,47 @@ async function fsListAll(coll){
 }
 /* save queue: every change is written in the background, retried until it lands */
 const Q=new Map(); let qBusy=false, qErr='';
-function put(coll,obj){ Q.set(coll+'|'+obj.id,{coll,id:obj.id,data:JSON.parse(JSON.stringify(obj))}); qFlush(); }
-function del(coll,id){ Q.set(coll+'|'+id,{coll,id,data:null}); qFlush(); }
+function put(coll,obj){ obj.updatedAt=Date.now(); Q.set(coll+'|'+obj.id,{coll,id:obj.id,data:JSON.parse(JSON.stringify(obj))}); qFlush(); cacheSoon(); }
+// deletes leave a small "deleted" marker so other devices see them on their next quick refresh
+function del(coll,id){ Q.set(coll+'|'+id,{coll,id,data:{id,deleted:true,updatedAt:Date.now()}}); qFlush(); cacheSoon(); }
+
+/* ---------- keep a copy on this phone; fetch only what changed ----------
+   All the apps share one free daily database limit, so SendDesk reads everything only on a fresh phone or once
+   a day, and otherwise asks only for records changed since the last check. */
+const CACHE_KEY='senddesk_cache_v1';
+let SYNC={lastPull:0,lastFull:0};
+function cacheSave(){ try{ localStorage.setItem(CACHE_KEY,JSON.stringify({email:LOGIN_EMAIL,DB,SYNC})); }catch(e){} }
+function cacheSoon(){ clearTimeout(cacheSoon._t); cacheSoon._t=setTimeout(cacheSave,800); }
+function cacheLoad(){ try{ const c=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); if(c&&c.email===LOGIN_EMAIL&&c.DB){ COLLS.forEach(k=>DB[k]=c.DB[k]||[]); SYNC=c.SYNC||SYNC; return true; } }catch(e){} return false; }
+function cacheClear(){ try{ localStorage.removeItem(CACHE_KEY); }catch(e){} }
+async function fsChanged(coll,since){
+  const r=await fetch(FB_API+FB_DOCS+'/'+ROOT+':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({structuredQuery:{from:[{collectionId:coll}],where:{fieldFilter:{field:{fieldPath:'updatedAt'},op:'GREATER_THAN_OR_EQUAL',value:{integerValue:String(Math.max(0,Math.floor(since)))}}}}})});
+  if(!r.ok){ const e=new Error('HTTP '+r.status); e.status=r.status; throw e; }
+  const arr=await r.json();
+  return (Array.isArray(arr)?arr:[]).filter(x=>x&&x.document).map(x=>{ const o=fsDec({mapValue:{fields:x.document.fields||{}}})||{}; o.id=x.document.name.split('/').pop(); return o; });
+}
+async function syncAll(forceFull){
+  const full=forceFull||!SYNC.lastPull||(Date.now()-(SYNC.lastFull||0)>20*3600*1000);
+  const started=Date.now();
+  const res=await Promise.all(COLLS.map(c=>full?fsListAll(c):fsChanged(c,SYNC.lastPull-15*60*1000)));
+  COLLS.forEach((c,i)=>{
+    const pending=new Set([...Q.values()].filter(q=>q.coll===c).map(q=>q.id));
+    if(full){ const keep=DB[c].filter(x=>pending.has(x.id)); DB[c]=res[i].filter(x=>!x.deleted&&!pending.has(x.id)).concat(keep); }
+    else res[i].forEach(r=>{ if(pending.has(r.id))return; const k=DB[c].findIndex(x=>x.id===r.id); if(r.deleted){ if(k>=0)DB[c].splice(k,1); } else if(k>=0) DB[c][k]=r; else DB[c].push(r); });
+  });
+  SYNC.lastPull=started; if(full) SYNC.lastFull=started;
+  normalize(); cacheSave(); return full;
+}
+function normalize(){
+  DB.contacts.forEach(c=>{ c.phone=c.phone||c.id; c.lists=c.lists||[]; });
+  DB.sends.forEach(s=>{ s.sent=s.sent||{}; s.marks=s.marks||{}; s.groupsSent=s.groupsSent||{}; s.recipients=s.recipients||[]; s.groups=s.groups||[]; });
+  reindex();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||!_auth||!$('app')||$('app').style.display!=='block') return;
+  syncAll(false).then(()=>{ const typing=document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName); if(!typing&&!$('ov').classList.contains('on')&&ROUTE!=='import') rerender(); }).catch(()=>{});
+});
 async function qFlush(){
   if(qBusy){return;}
   if(!Q.size){syncUI();return;}
@@ -263,7 +302,7 @@ async function qFlush(){
       const writes=items.map(it=>it.data===null?{delete:docName(it.coll,it.id)}:{update:{name:docName(it.coll,it.id),fields:fsEnc(it.data).mapValue.fields}});
       const r=await fetch(FB_API+FB_DOCS+':commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({writes})});
       if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}
-      items.forEach(it=>{const k=it.coll+'|'+it.id; if(Q.get(k)===it)Q.delete(k);});
+      items.forEach(it=>{const k=it.coll+'|'+it.id; if(Q.get(k)===it)Q.delete(k);}); cacheSoon();
       qErr='';
     }
   }catch(e){ qErr=String(e.message||e); clearTimeout(qFlush._t); qFlush._t=setTimeout(qFlush,6000); }
@@ -920,10 +959,14 @@ function cancelImport(){ if(!confirm('Cancel the import? Nothing will be saved.'
 async function startApp(){
   $('login').style.display='none'; $('app').style.display='block';
   $('view').innerHTML='<div class="empty">Loading…</div>';
+  const cached=cacheLoad();
+  if(cached){ normalize(); readHash(); render(); syncUI(); }
   try{
-    const res=await Promise.all(COLLS.map(c=>fsListAll(c)));
-    COLLS.forEach((c,i)=>DB[c]=res[i]);
+    await syncAll(!cached);
   }catch(e){
+    if(e.status===429){ if(cached){ toast('⚠️ Daily database limit reached — showing the copy on this phone. Changes save when it resets.',6000); return; }
+      $('view').innerHTML=`<div class="ban r"><b>Daily database limit reached.</b><br>All your apps share one free Firebase limit and it's used up for today. It resets around 1:30 pm IST. Your data is safe.</div><button class="btn full" onclick="location.reload()">Try again</button>`; return; }
+    if(cached&&!(e.status===403)){ toast('📶 Offline — showing the copy on this phone',4000); return; }
     if(e.status===403){ $('view').innerHTML=`<div class="ban r"><b>Database permission needed.</b><br>SendDesk's data area isn't open for your login yet. Add this rule in Firebase → Firestore → Rules (inside <code>match /databases/{database}/documents { … }</code>), then Publish and reload:</div>
       <pre style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;white-space:pre-wrap">match /senddesk/{doc=**} {
   allow read, write: if request.auth != null
@@ -932,9 +975,7 @@ async function startApp(){
     $('view').innerHTML=`<div class="ban r">Could not load (${esc(e.message)}). Check internet.</div><button class="btn full" onclick="location.reload()">Try again</button>`; return;
   }
   BUILTIN_LISTS.forEach(b=>{ if(!DB.lists.some(l=>l.id===b.id)){ const l=Object.assign({},b); DB.lists.push(l); put('lists',l); } });
-  DB.contacts.forEach(c=>{ c.phone=c.phone||c.id; c.lists=c.lists||[]; });
-  DB.sends.forEach(s=>{ s.sent=s.sent||{}; s.marks=s.marks||{}; s.groupsSent=s.groupsSent||{}; s.recipients=s.recipients||[]; s.groups=s.groups||[]; });
-  reindex(); readHash(); render(); syncUI();
+  normalize(); readHash(); rerender(); syncUI();
 }
 (function boot(){
   let m=''; try{ m=sessionStorage.getItem('sd_msg')||''; sessionStorage.removeItem('sd_msg'); }catch(e){}
